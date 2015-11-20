@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+##!/usr/bin/env python
 #
 # corenlp  - Python interface to Stanford Core NLP tools
 # Copyright (c) 2012 Dustin Smith
@@ -40,12 +40,12 @@ try:
 except ImportError:
     use_winpexpect = False
 
-VERBOSE = False
+VERBOSE = False 
 STATE_START, STATE_TEXT, STATE_WORDS, STATE_TREE, STATE_DEPENDENCY, STATE_COREFERENCE = 0, 1, 2, 3, 4, 5
 WORD_PATTERN = re.compile('\[([^\]]+)\]')
-CR_PATTERN = re.compile(r"\((\d*),(\d)*,\[(\d*),(\d*)\)\) -> \((\d*),(\d)*,\[(\d*),(\d*)\)\), that is: \"(.*)\" -> \"(.*)\"")
-
-DIRECTORY = "stanford-corenlp-full-2013-06-20"
+#CR_PATTERN = re.compile(r"\((\d*),(\d)*,\[(\d*),(\d*)\)\) -> \((\d*),(\d)*,\[(\d*),(\d*)\)\), that is: \"(.*)\" -> \"(.*)\"")
+CR_PATTERN = re.compile(r'\((\d*),(\d*),\[(\d*),(\d*)\]\) -> \((\d*),(\d*),\[(\d*),(\d*)\]\), that is: \"(.*?)\" -> \"(.*?)\"')
+DIRECTORY = "/afs/inf.ed.ac.uk/user/c/clai/lubbock/repos-3rd/stanford-corenlp-python/corenlp/stanford-corenlp-full-2015-04-20/"
 
 
 class bc:
@@ -103,7 +103,7 @@ def init_corenlp_command(corenlp_path, memory, properties):
     jar_mask = "*.jar"
     jars = glob.glob(os.path.join(corenlp_path, jar_mask))
 
-    java_path = "java"
+    java_path = "/usr/lib/jvm/java-1.8.0-sun/bin/java"
     classname = "edu.stanford.nlp.pipeline.StanfordCoreNLP"
     # include the properties file, so you can change defaults
     # but any changes in output format will break parse_parser_results()
@@ -151,12 +151,18 @@ def parse_parser_results(text):
     and then returns a Python list of dictionaries, one for each parsed
     sentence.
     """
+
+    print "******"
+    print text
+    print "******"
+
     results = {"sentences": []}
+
     state = STATE_START
     lines = unidecode(text.decode('utf-8')).split("\n")
     for index, line in enumerate(lines):
         line = line.strip()
-
+#	print line
         if line.startswith("Sentence #"):
             sentence = {'words': [], 'parsetree': [], 'dependencies': []}
             results["sentences"].append(sentence)
@@ -193,13 +199,19 @@ def parse_parser_results(text):
             if "Coreference set" in line:
                 if 'coref' not in results:
                     results['coref'] = []
-                coref_set = []
-                results['coref'].append(coref_set)
+                #coref_set = []
+                #results['coref'].append(coref_set)
             else:
+		#print "**** Coref %s" % line
+		#print  CR_PATTERN.findall(line)
                 for src_i, src_pos, src_l, src_r, sink_i, sink_pos, sink_l, sink_r, src_word, sink_word in CR_PATTERN.findall(line):
+		    print "** src_i"
                     src_i, src_pos, src_l, src_r = int(src_i) - 1, int(src_pos) - 1, int(src_l) - 1, int(src_r) - 1
                     sink_i, sink_pos, sink_l, sink_r = int(sink_i) - 1, int(sink_pos) - 1, int(sink_l) - 1, int(sink_r) - 1
-                    coref_set.append(((src_word, src_i, src_pos, src_l, src_r), (sink_word, sink_i, sink_pos, sink_l, sink_r)))
+                    #coref_set.append(((src_word, src_i, src_pos, src_l, src_r), (sink_word, sink_i, sink_pos, sink_l, sink_r)))
+                    print ((src_word, src_i, src_pos, src_l, src_r), (sink_word, sink_i, sink_pos, sink_l, sink_r))
+
+                    results['coref'].append(((src_word, src_i, src_pos, src_l, src_r), (sink_word, sink_i, sink_pos, sink_l, sink_r)))
 
     return results
 
@@ -315,21 +327,21 @@ class StanfordCoreNLP:
                 searchwindowsize=80)
 
         # show progress bar while loading the models
-        if VERBOSE:
-            widgets = ['Loading Models: ', Fraction()]
-            pbar = ProgressBar(widgets=widgets, maxval=5, force_update=True).start()
-            # Model timeouts:
-            # pos tagger model (~5sec)
-            # NER-all classifier (~33sec)
-            # NER-muc classifier (~60sec)
-            # CoNLL classifier (~50sec)
-            # PCFG (~3sec)
-            timeouts = [20, 200, 600, 600, 20]
-            for i in xrange(5):
-                self.corenlp.expect("done.", timeout=timeouts[i])  # Load model
-                pbar.update(i + 1)
-            self.corenlp.expect("Entering interactive shell.")
-            pbar.finish()
+#        if VERBOSE:
+#            widgets = ['Loading Models: ', Fraction()]
+#            pbar = ProgressBar(widgets=widgets, maxval=5, force_update=True).start()
+#            # Model timeouts:
+#            # pos tagger model (~5sec)
+#            # NER-all classifier (~33sec)
+#            # NER-muc classifier (~60sec)
+#            # CoNLL classifier (~50sec)
+#            # PCFG (~3sec)
+#            timeouts = [20, 200, 600, 600, 20]
+#            for i in xrange(5):
+#                self.corenlp.expect("done.", timeout=timeouts[i])  # Load model
+#                pbar.update(i + 1)
+#            self.corenlp.expect("Entering interactive shell.")
+#            pbar.finish()
 
         # interactive shell
         self.corenlp.expect("\nNLP> ")
